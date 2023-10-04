@@ -1,0 +1,15 @@
+body {
+  color: #fff;
+  font-family: "Courier New", sans-serif, monospace;
+  font-weight: 600;
+  background: linear-gradient(89deg, #ff5edf 0%, #04c8de 100%);
+}
+
+.flex-centerr {
+  display: flex;
+  justify-content: center;
+}
+
+button {
+  cursor: pointer;
+}
