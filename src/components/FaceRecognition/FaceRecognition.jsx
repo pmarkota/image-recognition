@@ -17,7 +17,7 @@ export const FaceRecognition = ({ imageUrl, box }) => {
     );
   });
   return (
-    <div className="center ma">
+    <div className="flex-centerr ma">
       <div className="absolute mt2">
         <img
           id="inputImage"
