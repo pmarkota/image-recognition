@@ -232,23 +232,27 @@ const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
 function App() {
   const [input, setInput] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [box, setBox] = useState({});
+  const [box, setBox] = useState([]);
 
   const calculateFaceLocation = (data) => {
-    const clarifaiFace =
-      data.outputs[0].data.regions[0].region_info.bounding_box;
+    const clarifaiFace = data.outputs[0].data.regions.map((box) => {
+      return box.region_info.bounding_box;
+    });
     const image = document.getElementById("inputImage");
     const width = Number(image.width);
     const height = Number(image.height);
     console.log("width: " + width);
     console.log("height: " + height);
     console.log("clarifaiFace: " + clarifaiFace);
-    return {
-      leftCol: clarifaiFace.left_col * width,
-      topRow: clarifaiFace.top_row * height,
-      rightCol: width - clarifaiFace.right_col * width,
-      bottomRow: height - clarifaiFace.bottom_row * height,
-    };
+    const box = clarifaiFace.map((face) => {
+      return {
+        leftCol: face.left_col * width,
+        topRow: face.top_row * height,
+        rightCol: width - face.right_col * width,
+        bottomRow: height - face.bottom_row * height,
+      };
+    });
+    return box;
   };
 
   const displayFaceBox = (box) => {
