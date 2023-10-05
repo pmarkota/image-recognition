@@ -1,4 +1,4 @@
-import { useState, Component } from "react";
+import { useState, useEffect } from "react";
 import Navigation from "./components/Navigation/Navigation";
 import Logo from "./components/Logo/Logo";
 import ImageLinkForm from "./components/ImageLinkForm/ImageLinkForm";
@@ -126,100 +126,214 @@ const particleOptions = {
     size: "cover",
   },
 };
+// // Your PAT (Personal Access Token) can be found in the portal under Authentification
+// const PAT = "9b6d8f5038614216ae79462f490b8447";
+// // Specify the correct user_id/app_id pairings
+// // Since you're making inferences outside your app's scope
+// const USER_ID = "irll654s37a0";
+// const APP_ID = "image-recognition";
+// // Change these to whatever model and image URL you want to use
+// const MODEL_ID = "face-detection";
+// const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
 
-// Your PAT (Personal Access Token) can be found in the portal under Authentification
+// class App extends Component {
+//   constructor() {
+//     super();
+//     this.state = {
+//       input: "",
+//       imageUrl: "",
+//     };
+//   }
+
+//   onInputChange = (event) => {
+//     this.setState({ input: event.target.value });
+//   };
+
+//   onButtonSubmit = (image) => {
+//     this.setState({ imageUrl: this.state.input });
+
+//     console.log( "STATE INPUT " + this.state.input);
+//     console.log( "STATE IMAGE URL " + this.state.imageUrl);
+//     const raw = JSON.stringify({
+//       user_app_id: {
+//         user_id: USER_ID,
+//         app_id: APP_ID,
+//       },
+//       inputs: [
+//         {
+//           data: {
+//             image: {
+//               url: this.state.imageUrl,
+//             },
+//           },
+//         },
+//       ],
+//     });
+//     const requestOptions = {
+//       method: "POST",
+//       headers: {
+//         Accept: "application/json",
+//         Authorization: "Key " + PAT,
+//       },
+//       body: raw,
+//     };
+//     fetch(
+//       "https://api.clarifai.com/v2/models/" +
+//         MODEL_ID +
+//         "/versions/" +
+//         MODEL_VERSION_ID +
+//         "/outputs",
+//       requestOptions
+//     )
+//       .then((response) => response.json())
+//       .then((result) => console.log(result))
+//       .catch((error) => console.log("error", error));
+//   };
+
+//   async componentDidMount() {
+//     await this.particlesInit();
+//   }
+
+//   particlesInit = async (main) => {
+//     await loadFull(main);
+//   };
+
+//   render() {
+//     return (
+
+//       <div className="App">
+//         <Particles
+//           id="tsparticles"
+//           init={this.particlesInit} // Use "this.particlesInit"
+//           // Assuming particleOptions is defined elsewhere
+//           options={particleOptions}
+//         />
+//         <Navigation />
+//         <Logo />
+//         <Rank />
+//         <ImageLinkForm
+//           onInputChange={this.onInputChange}
+//           onButtonSubmit={this.onButtonSubmit}
+//         />
+//         <FaceRecognition image={this.state.imageUrl} />
+//       </div>
+//     );
+//   }
+// }
+
+// export default App;
+
 const PAT = "9b6d8f5038614216ae79462f490b8447";
-// Specify the correct user_id/app_id pairings
-// Since you're making inferences outside your app's scope
 const USER_ID = "irll654s37a0";
 const APP_ID = "image-recognition";
-// Change these to whatever model and image URL you want to use
 const MODEL_ID = "face-detection";
 const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
-let IMAGE_URL = "";
-class App extends Component {
-  constructor() {
-    super();
-    this.state = {
-      input: "",
-      imageUrl: "",
-    };
-  }
 
-  onInputChange = (event) => {
-    this.setState({ input: event.target.value });
+function App() {
+  const [input, setInput] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [box, setBox] = useState({});
+
+  const calculateFaceLocation = (data) => {
+    const clarifaiFace =
+      data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById("inputImage");
+    const width = Number(image.width);
+    const height = Number(image.height);
+    console.log("width: " + width);
+    console.log("height: " + height);
+    console.log("clarifaiFace: " + clarifaiFace);
+    return {
+      leftCol: clarifaiFace.left_col * width,
+      topRow: clarifaiFace.top_row * height,
+      rightCol: width - clarifaiFace.right_col * width,
+      bottomRow: height - clarifaiFace.bottom_row * height,
+    };
   };
 
-  onButtonSubmit = (image) => {
-    this.setState({ imageUrl: this.state.input });
-    console.log(this.state.input + " " + this.state.imageUrl);
-    IMAGE_URL = image;
-    const raw = JSON.stringify({
-      user_app_id: {
-        user_id: USER_ID,
-        app_id: APP_ID,
-      },
-      inputs: [
-        {
-          data: {
-            image: {
-              url: image,
+  const displayFaceBox = (box) => {
+    console.log(box); //!remove this line after the displayFaceBox function is working  properly
+    setBox(box);
+  };
+
+  useEffect(() => {
+    setBox(box);
+  }, [box]);
+
+  async function loadParticles(main) {
+    await loadFull(main);
+  }
+  // The empty dependency array ensures this effect runs only once, like componentDidMount
+
+  const onInputChange = (event) => {
+    setInput(event.target.value);
+  };
+
+  //? This is the new onButtonSubmit function
+  const onButtonSubmit = () => {
+    setImageUrl(input);
+  };
+  //? This useEffect hook will run every time the imageUrl changes
+  useEffect(() => {
+    if (imageUrl) {
+      const raw = JSON.stringify({
+        user_app_id: {
+          user_id: USER_ID,
+          app_id: APP_ID,
+        },
+        inputs: [
+          {
+            data: {
+              image: {
+                url: imageUrl, // Use imageUrl directly here
+              },
             },
           },
+        ],
+      });
+
+      console.log("this is the raw  + " + raw);
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: "Key " + PAT,
         },
-      ],
-    });
-    const requestOptions = {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: "Key " + PAT,
-      },
-      body: raw,
-    };
-    fetch(
-      "https://api.clarifai.com/v2/models/" +
-        MODEL_ID +
-        "/versions/" +
-        MODEL_VERSION_ID +
-        "/outputs",
-      requestOptions
-    )
-      .then((response) => response.json())
-      .then((result) => console.log(result))
-      .catch((error) => console.log("error", error));
-  };
+        body: raw,
+      };
+      fetch(
+        "https://api.clarifai.com/v2/models/" +
+          MODEL_ID +
+          "/versions/" +
+          MODEL_VERSION_ID +
+          "/outputs",
+        requestOptions
+      )
+        .then((response) => response.json())
+        .then((result) => {
+          const a = displayFaceBox(calculateFaceLocation(result));
+        })
+        .catch((error) => console.log("error", error));
+    }
+  }, [imageUrl]);
 
-  async componentDidMount() {
-    await this.particlesInit(); // Call particlesInit in componentDidMount
-  }
-
-  particlesInit = async (main) => {
-    console.log(main);
-    // Assuming loadFull is a function you've defined elsewhere
-    await loadFull(main);
-  };
-
-  render() {
-    return (
-      <div className="App">
-        <Particles
-          id="tsparticles"
-          init={this.particlesInit} // Use "this.particlesInit"
-          // Assuming particleOptions is defined elsewhere
-          options={particleOptions}
-        />
-        <Navigation />
-        <Logo />
-        <Rank />
-        <ImageLinkForm
-          onInputChange={this.onInputChange}
-          onButtonSubmit={this.onButtonSubmit}
-        />
-        <FaceRecognition image={this.state.imageUrl} />
-      </div>
-    );
-  }
+  return (
+    <div className="App">
+      <Particles
+        id="tsparticles"
+        init={loadParticles}
+        options={particleOptions}
+      />
+      <Navigation />
+      <Logo />
+      <Rank />
+      <ImageLinkForm
+        onInputChange={onInputChange}
+        onButtonSubmit={onButtonSubmit}
+      />
+      <FaceRecognition box={box} imageUrl={imageUrl} />
+    </div>
+  );
 }
 
 export default App;
